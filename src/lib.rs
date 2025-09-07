@@ -1,3 +1,1 @@
-mod networking;
-
-pub use networking::constants;
+pub mod networking;
