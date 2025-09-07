@@ -6,6 +6,8 @@ default-run = "game"
 
 [dependencies]
 bevy = { version = "0.16.1", features = ["dynamic_linking"] }
+regex = "1.11.2"
+tokio = { version = "1.47.1", features = ["full"] }
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]

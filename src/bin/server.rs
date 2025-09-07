@@ -1,64 +1,88 @@
-use game::constants::{MULTICAST_IP, Ports};
-use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream, UdpSocket};
-use std::{thread, time::Duration};
+use game::constants::*;
+use std::net::Ipv4Addr;
+use std::sync::Arc;
 
-fn handle_client(mut stream: TcpStream) {
-    let mut buffer = [0; 512];
-    loop {
-        match stream.read(&mut buffer) {
-            Ok(0) => {
-                // Connection was closed
-                println!("Client disconnected");
-                break;
-            }
-            Ok(n) => {
-                println!("Received: {}", String::from_utf8_lossy(&buffer[..n]));
-                // Echo it back
-                if let Err(e) = stream.write_all(&buffer[..n]) {
-                    eprintln!("Failed to send response: {}", e);
-                    break;
-                }
-            }
-            Err(e) => {
-                eprintln!("Failed to read from connection: {}", e);
-                break;
-            }
-        }
-    }
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpListener, TcpStream, UdpSocket};
+use tokio::sync::Mutex;
+use tokio::time::{Duration, sleep};
+
+struct ConnectionState {
+    connections: usize,
+    max_connections: usize,
 }
 
-fn broadcast(socket: &UdpSocket) -> std::io::Result<()> {
-    let message = format!("ECHO_SERVER:{}", Ports::GAME as i32);
+async fn broadcast(state: Arc<Mutex<ConnectionState>>) -> std::io::Result<()> {
+    let socket = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).await?;
+    socket.set_broadcast(true)?;
+
+    let message = format!("{}:{}", BROADCAST_IDENTIFIER, Ports::GAME as i32);
     let message_bytes = message.as_bytes();
 
     loop {
-        socket.send_to(
-            message_bytes,
-            format!("{}:{}", MULTICAST_IP, Ports::DISCOVERY as i32),
-        )?;
-        thread::sleep(Duration::from_secs(2));
+        let s = state.lock().await;
+        if s.connections < s.max_connections {
+            socket
+                .send_to(message_bytes, (MULTICAST_IP, Ports::DISCOVERY as u16))
+                .await?;
+        }
+        sleep(Duration::from_secs(BROADCAST_INTERVAL)).await;
     }
 }
 
-fn main() -> std::io::Result<()> {
-    let socket = UdpSocket::bind("0.0.0.0:0")?; // any available port
-    socket.set_broadcast(true)?;
-    std::thread::spawn(move || broadcast(&socket));
+async fn handle_client(mut socket: TcpStream, state: Arc<Mutex<ConnectionState>>) {
+    let mut buf = [0u8; 1024];
 
-    let listener = TcpListener::bind(format!("0.0.0.0:{}", Ports::GAME as i32))?;
-
-    for stream in listener.incoming() {
-        match stream {
-            Ok(stream) => {
-                println!("New client connected");
-                std::thread::spawn(|| handle_client(stream));
-            }
+    loop {
+        let n = match socket.read(&mut buf).await {
+            Ok(0) => break,
+            Ok(n) => n,
             Err(e) => {
-                eprintln!("Connection failed: {}", e);
+                eprintln!("failed to read from socket; err = {:?}", e);
+                break;
             }
+        };
+
+        if let Err(e) = socket.write_all(&buf[0..n]).await {
+            eprintln!("failed to write to socket; err = {:?}", e);
+            break;
         }
     }
 
-    Ok(())
+    {
+        let mut s = state.lock().await;
+        s.connections -= 1;
+        println!("Connections: {}", s.connections);
+    }
+}
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    let state = Arc::new(Mutex::new(ConnectionState {
+        connections: 0,
+        max_connections: 2,
+    }));
+
+    let broadcast_state = Arc::clone(&state);
+    tokio::spawn(async move {
+        if let Err(e) = broadcast(broadcast_state).await {
+            eprintln!("broadcast failed: {:?}", e);
+        }
+    });
+
+    let listener = TcpListener::bind((Ipv4Addr::UNSPECIFIED, Ports::GAME as u16)).await?;
+    println!("Server initialized. Waiting for connections...");
+
+    loop {
+        let (socket, _) = listener.accept().await?;
+        {
+            let mut s = state.lock().await;
+            if s.connections < s.max_connections {
+                s.connections += 1;
+                println!("Connections: {}", s.connections);
+            }
+        }
+        let client_state = Arc::clone(&state);
+        tokio::spawn(handle_client(socket, client_state));
+    }
 }

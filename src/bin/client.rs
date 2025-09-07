@@ -1,30 +1,40 @@
-use game::constants::{MULTICAST_IP, Ports};
-use std::io::{self, Read, Write};
+use game::constants::{BROADCAST_IDENTIFIER, MULTICAST_IP, Ports};
+use regex::Regex;
+use std::io::{self, Write};
 use std::net::Ipv4Addr;
-use std::net::{TcpStream, UdpSocket};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpStream, UdpSocket};
 
-fn discover() -> std::io::Result<Option<String>> {
-    let socket = UdpSocket::bind(format!("0.0.0.0:{}", Ports::DISCOVERY as i32))?;
+async fn discover() -> std::io::Result<Option<String>> {
+    let socket = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, Ports::DISCOVERY as u16)).await?;
+    socket.join_multicast_v4(
+        MULTICAST_IP.parse::<Ipv4Addr>().unwrap(),
+        Ipv4Addr::UNSPECIFIED,
+    )?;
 
-    socket.join_multicast_v4(&MULTICAST_IP.parse().unwrap(), &Ipv4Addr::UNSPECIFIED)?;
-    let mut buf = [0; 1024];
+    let pattern = format!(r"^{}:(\d+)$", BROADCAST_IDENTIFIER);
+    let re = Regex::new(&pattern).unwrap();
 
+    let mut buf = [0u8; 1024];
     loop {
-        let (amt, src) = socket.recv_from(&mut buf)?;
+        let (amt, src) = socket.recv_from(&mut buf).await?;
         let msg = String::from_utf8_lossy(&buf[..amt]);
         println!("Discovered server: {} - {}", src.ip(), msg);
 
-        if msg.contains("ECHO_SERVER") {
-            return Ok(Some(format!("{}", src.ip())));
+        if let Some(caps) = re.captures(msg.to_string().as_str()) {
+            let port = &caps[1];
+            return Ok(Some(format!("{}:{}", src.ip(), port)));
         }
     }
 }
 
-fn main() -> std::io::Result<()> {
-    match discover() {
+// TODO: update client to use port p
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    match discover().await {
         Ok(Some(server)) => {
-            let mut stream = TcpStream::connect(format!("{}:{}", server, Ports::GAME as i32))?;
-            println!("Connected to server: {}:{}", server, Ports::GAME as i32);
+            let mut stream = TcpStream::connect(server.clone()).await?;
+            println!("Connected to server, {}", server);
 
             let stdin = io::stdin();
             loop {
@@ -38,10 +48,10 @@ fn main() -> std::io::Result<()> {
                     break;
                 }
 
-                stream.write_all(input.as_bytes())?;
+                stream.write_all(input.as_bytes()).await?;
 
                 let mut buffer = [0; 512];
-                let n = stream.read(&mut buffer)?;
+                let n = stream.read(&mut buffer).await?;
                 println!("Echoed: {}", String::from_utf8_lossy(&buffer[..n]));
             }
         }
