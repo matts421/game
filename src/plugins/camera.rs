@@ -12,7 +12,7 @@ impl Plugin for CameraPlugin{
 }
 
 fn spawn_camera(mut commands: Commands){
-    player_spawn = 
+    // player_spawn = 
     commands.spawn((Camera3d::default(), 
     Transform::from_xyz(0.0, CAMERA_DISTANCE, CAMERA_DISTANCE)
         .looking_at(Vec3::ZERO, Vec3::ZERO),
