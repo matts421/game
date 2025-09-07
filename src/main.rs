@@ -16,13 +16,6 @@ pub const WINDOW_HEIGHT: i32 = 768;
 fn main() {
     App::new() 
         .add_plugins(ScenePlugin)
-        // .insert_resource(
-        //     ClearColor(Color::srgb(0.1, 0., 0.15)))
-        // .insert_resource(AmbientLight { 
-        //     color: Color::WHITE,
-        //     brightness: 750.0,
-        //     ..Default::default()
-        // })
         .add_plugins(PlayerPlugin)
         .add_plugins(MovementPlugin)
         .add_plugins(CameraPlugin)
