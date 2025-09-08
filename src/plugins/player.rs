@@ -6,6 +6,8 @@ use crate::plugins::movement::Velocity;
 
 const INIT_TRANSLATION: Vec3 = Vec3::new(0.0, 0.0, 0.0);
 const INIT_VELOCITY: Vec3 = Vec3::new(0.0, 0.0, 0.0);
+const PLAYER_SPEED: f32 = 2.5; 
+pub const PLAYER_SCALE: f32 = 50.0;
 
 #[derive(Component, Debug)]
 pub struct Player;
@@ -21,12 +23,12 @@ impl Plugin for PlayerPlugin{
 
 
 fn spawn_character(mut commands: Commands, asset_server : Res<AssetServer>){ 
-    let model_scene = asset_server.load(GltfAssetLabel::Scene(0).from_asset("Trashcan Small.glb"));
+    let model_scene = asset_server.load("Trashcan Small.glb#Scene0");
     commands.spawn((
         Transform {
             translation: INIT_TRANSLATION,
             rotation: Quat::IDENTITY,
-            scale: Vec3::new(50., 50., 50.),
+            scale: Vec3::new(PLAYER_SCALE, PLAYER_SCALE, PLAYER_SCALE ),
             ..default()
         },
         Player,
@@ -54,7 +56,6 @@ fn player_movement(keyboard_input : Res<ButtonInput<KeyCode>>, mut query: Query<
         if direction.length() > 0.0 {
             direction = direction.normalize();
         }
-        let speed = 0.5; 
-        velocity.value = direction * speed;
+        velocity.value = direction * PLAYER_SPEED;
     }
 }
