@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::input::mouse::{MouseMotion, MouseButtonInput};
 
 use crate::plugins::player::Player;
 use crate::plugins::player::PLAYER_SCALE;
@@ -34,7 +35,15 @@ fn camera_follow(mut camera_query: Query<&mut Transform, (With<Camera3d>, Withou
     
 }
 
-fn camera_mouse_move(){ 
-
+fn camera_mouse_move(
+    mut mouse_motion: EventReader<MouseMotion>,
+    mut camera_query: Query<&mut Transform, With<Camera3d>>,
+) {
+    let mut delta_sum = Vec2::ZERO;
+   for delta in mouse_motion.read(){
+        delta_sum += delta.delta;
+   }
+    camera_query.single_mut().unwrap().rotate_x(-delta_sum.y * 0.005);
+    camera_query.single_mut().unwrap().rotate_y(-delta_sum.x * 0.005);
 }
 
