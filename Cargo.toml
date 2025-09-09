@@ -5,7 +5,9 @@ edition = "2024"
 default-run = "game"
 
 [dependencies]
-bevy = { version = "0.16.1", features = ["dynamic_linking"] }
+
+bevy = { version = "0.16.1", features = ["dynamic_linking", "jpeg", "bevy_winit"] }
+bevy_panorbit_camera = "0.28"
 regex = "1.11.2"
 tokio = { version = "1.47.1", features = ["full"] }
 
