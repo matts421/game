@@ -1,0 +1,89 @@
+name: Rust CI
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build (Compilation Check)
+    outputs:
+      cache-key: ${{ steps.cache.outputs.key }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install Clippy and Rustfmt
+        run: |
+          rustup component add clippy rustfmt
+
+      - name: Generate cache key
+        id: cache
+        run: echo "key=cargo-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Cache cargo registry and git
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-${{ steps.cache.outputs.key }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Cache cargo build artifacts
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-${{ steps.cache.outputs.key }}
+          restore-keys: |
+            ${{ runner.os }}-target-
+
+      - name: Build
+        run: cargo build --locked
+
+  clippy:
+    runs-on: ubuntu-latest
+    needs: build
+    name: Clippy (Lint Check)
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - run: rustup component add clippy
+      - name: Restore target cache
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-${{ needs.build.outputs.cache-key }}
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+  fmt:
+    runs-on: ubuntu-latest
+    needs: build
+    name: Rustfmt (Formatting Check)
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - run: rustup component add rustfmt
+      - name: Restore target cache
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-${{ needs.build.outputs.cache-key }}
+      - name: Check formatting
+        run: cargo fmt --all -- --check
