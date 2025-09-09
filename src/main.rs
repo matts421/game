@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_panorbit_camera::PanOrbitCameraPlugin;
 
 pub mod plugins; 
 
@@ -17,6 +18,7 @@ pub const WINDOW_HEIGHT: i32 = 768;
 fn main() {
     App::new() 
         .add_plugins(ScenePlugin)
+        .add_plugins(PanOrbitCameraPlugin)
         .add_plugins(PlayerPlugin)
         .add_plugins(MovementPlugin)
         .add_plugins(CameraPlugin) 

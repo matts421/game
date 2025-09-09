@@ -12,6 +12,6 @@ impl Plugin for PrintPlugin{
 
 fn print_position(query: Query<(Entity, &Transform)>){
     for (entity, transform) in query.iter(){
-        info!("Entity {:?} is at position (x, y, z) {:?}", entity, transform.translation);
+      info!("Entity {:?} is at position (x, y, z) {:?}", entity, transform.translation);
     }
 }

@@ -1,49 +1,79 @@
-use bevy::prelude::*;
-use bevy::input::mouse::{MouseMotion, MouseButtonInput};
+use std::{f32::consts::FRAC_PI_2, ops::Range};
+use bevy::{input::mouse::AccumulatedMouseMotion, prelude::*};
 
-use crate::plugins::player::Player;
-use crate::plugins::player::PLAYER_SCALE;
 use crate::plugins::movement::update_position;
+use crate::plugins::player::{Player};
+
+// Change for camera feel. 
+const CAMERA_RADIUS : f32 = 150.0;
+const PITCH_SPEED : f32 = 0.003;
+const YAW_SPEED : f32 = 0.004;
 
 
-const CAMERA_DISTANCE_Z: f32 = 80.0; 
-const CAMERA_DISTANCE_Y: f32 = 60.0;
+#[derive(Debug, Resource)]
+struct CameraSettings {
+    pub orbit_distance: f32,
+    pub pitch_speed: f32,
+    // Clamp pitch to this range
+    pub pitch_range: Range<f32>,
+    pub yaw_speed: f32,
+}
 
-pub struct CameraPlugin; 
-
-impl Plugin for CameraPlugin{
-    fn build(&self, app: &mut App){
-        app
-            .add_systems(Startup, spawn_camera)
-            .add_systems(Update, camera_follow.after(update_position))
-            .add_systems(Update, camera_mouse_move);
+impl Default for CameraSettings {
+    fn default() -> Self {
+        let pitch_limit = FRAC_PI_2 - 0.01;
+        Self {
+            orbit_distance: CAMERA_RADIUS,
+            pitch_speed: PITCH_SPEED,
+            pitch_range: -pitch_limit..pitch_limit,
+            yaw_speed: YAW_SPEED,
+        }
     }
 }
 
-fn spawn_camera(mut commands: Commands){
-    let observing: Vec3 = Vec3::new(0.0, PLAYER_SCALE / 2., 0.0); 
-    commands.spawn((Camera3d::default(), 
-    Transform::from_xyz(0.0, CAMERA_DISTANCE_Y, CAMERA_DISTANCE_Z)
-        .looking_at(observing, Vec3::Y),
+#[derive(Component)]
+pub struct CameraPlugin;
+impl Plugin for CameraPlugin{
+fn build(&self, app: &mut App) {
+    app
+        .init_resource::<CameraSettings>()
+        .add_systems(Startup, setup)
+        .add_systems(Update, orbit.after(update_position));     
+}
+}
+
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    commands.spawn((
+        Name::new("Camera"),
+        Camera3d::default(),
+        Transform::from_xyz(0.0, 0.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 }
 
-fn camera_follow(mut camera_query: Query<&mut Transform, (With<Camera3d>, Without<Player>)>, player_query: Query<&Transform, With<Player>>){
-       let player_translation = player_query.single().unwrap().translation; 
-       let mut camera_transform = camera_query.single_mut().unwrap();
-       camera_transform.translation = player_translation + Vec3::new(0.0, CAMERA_DISTANCE_Y, CAMERA_DISTANCE_Z); 
-    
-}
-
-fn camera_mouse_move(
-    mut mouse_motion: EventReader<MouseMotion>,
-    mut camera_query: Query<&mut Transform, With<Camera3d>>,
+fn orbit(
+    mut camera: Single<&mut Transform, With<Camera>>,
+    camera_settings: Res<CameraSettings>,
+    mouse_motion: Res<AccumulatedMouseMotion>,
+    player_transform: Query<&Transform, (With<Player>, Without<Camera>)>,
 ) {
-    let mut delta_sum = Vec2::ZERO;
-   for delta in mouse_motion.read(){
-        delta_sum += delta.delta;
-   }
-    camera_query.single_mut().unwrap().rotate_x(-delta_sum.y * 0.005);
-    camera_query.single_mut().unwrap().rotate_y(-delta_sum.x * 0.005);
-}
+    let delta = mouse_motion.delta;
 
+    let delta_pitch = delta.y * camera_settings.pitch_speed;
+    let delta_yaw = delta.x * camera_settings.yaw_speed;
+
+    let (yaw, pitch, roll) = camera.rotation.to_euler(EulerRot::YXZ);
+
+    let pitch = (pitch + delta_pitch).clamp(
+        camera_settings.pitch_range.start,
+        camera_settings.pitch_range.end,
+    );
+    let yaw = yaw + delta_yaw;
+    camera.rotation = Quat::from_euler(EulerRot::YXZ, yaw, pitch, roll);
+
+    let target = player_transform.single().unwrap().translation;
+    camera.translation = target - camera.forward() * camera_settings.orbit_distance;
+}
