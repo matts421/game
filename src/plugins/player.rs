@@ -19,9 +19,20 @@ impl Plugin for PlayerPlugin {
     }
 }
 
-fn spawn_character(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let model_scene = asset_server.load("Trashcan Small.glb#Scene0");
+fn spawn_character(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let cube_mesh = meshes.add(Cuboid::new(1.0, 1.0, 1.0));
+    let cube_material = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.2, 0.7, 1.0),
+        ..default()
+    });
+
     commands.spawn((
+        Mesh3d(cube_mesh),
+        MeshMaterial3d(cube_material),
         Transform {
             translation: INIT_TRANSLATION,
             rotation: Quat::IDENTITY,
@@ -29,7 +40,6 @@ fn spawn_character(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         },
         Player,
-        SceneRoot(model_scene),
         Velocity {
             value: INIT_VELOCITY,
         },

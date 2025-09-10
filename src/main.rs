@@ -3,10 +3,8 @@ use bevy::prelude::*;
 
 pub mod plugins;
 
-use plugins::ground_sample::GroundPlugin;
 use plugins::movement::MovementPlugin;
 use plugins::player::PlayerPlugin;
-use plugins::scene::ScenePlugin;
 
 use crate::plugins::camera::CameraPlugin;
 
@@ -17,11 +15,9 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(WireframePlugin::default())
-        .add_plugins(ScenePlugin)
         .add_plugins(PlayerPlugin)
         .add_plugins(MovementPlugin)
         .add_plugins(CameraPlugin)
-        .add_plugins(GroundPlugin)
         .add_systems(Startup, setup)
         .run();
     println!("Program finished running.");
