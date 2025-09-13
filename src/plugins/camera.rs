@@ -3,6 +3,7 @@ use bevy::window::CursorGrabMode;
 
 use crate::plugins::movement::update_position;
 use crate::plugins::player::Player;
+use crate::state::AppState;
 
 const ORBIT_DISTANCE: f32 = 10.0;
 
@@ -10,8 +11,15 @@ const ORBIT_DISTANCE: f32 = 10.0;
 pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (setup, setup_cursor));
-        app.add_systems(Update, orbit.after(update_position));
+        app.add_systems(Startup, setup)
+            .add_systems(OnEnter(AppState::Playing), lock_cursor)
+            .add_systems(OnExit(AppState::Playing), unlock_cursor)
+            .add_systems(
+                Update,
+                orbit
+                    .after(update_position)
+                    .run_if(in_state(AppState::Playing)),
+            );
     }
 }
 
@@ -22,10 +30,16 @@ fn setup(mut commands: Commands) {
     ));
 }
 
-fn setup_cursor(mut windows: Query<&mut Window>) {
+fn lock_cursor(mut windows: Query<&mut Window>) {
     let mut window = windows.single_mut().unwrap();
     window.cursor_options.grab_mode = CursorGrabMode::Locked;
     window.cursor_options.visible = false;
+}
+
+fn unlock_cursor(mut windows: Query<&mut Window>) {
+    let mut window = windows.single_mut().unwrap();
+    window.cursor_options.grab_mode = CursorGrabMode::None;
+    window.cursor_options.visible = true;
 }
 
 fn orbit(

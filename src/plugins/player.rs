@@ -2,6 +2,7 @@ use bevy::{input::mouse::MouseMotion, prelude::*};
 
 use crate::plugins::movement::Velocity;
 //the character is a garbage can for now...
+use crate::state::AppState;
 
 const INIT_TRANSLATION: Vec3 = Vec3::new(0.0, 0.0, 0.0);
 const INIT_VELOCITY: Vec3 = Vec3::new(0.0, 0.0, 0.0);
@@ -14,8 +15,10 @@ pub struct Player;
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_character)
-            .add_systems(Update, (mouse_look, player_movement));
+        app.add_systems(Startup, spawn_character).add_systems(
+            Update,
+            (mouse_look, player_movement).run_if(in_state(AppState::Playing)),
+        );
     }
 }
 
@@ -47,6 +50,7 @@ fn spawn_character(
 }
 
 fn player_movement(
+    mut next_state: ResMut<NextState<AppState>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut query: Query<(&Transform, &mut Velocity), With<Player>>,
 ) {
@@ -75,6 +79,9 @@ fn player_movement(
     }
     if keyboard_input.pressed(KeyCode::ShiftLeft) {
         direction -= Vec3::Y;
+    }
+    if keyboard_input.pressed(KeyCode::Escape) {
+        next_state.set(AppState::Menu);
     }
     velocity.value = direction.normalize_or_zero() * PLAYER_SPEED;
 }
