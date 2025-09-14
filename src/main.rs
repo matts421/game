@@ -1,12 +1,11 @@
 use bevy::pbr::wireframe::{Wireframe, WireframePlugin};
 use bevy::prelude::*;
 
-pub mod plugins;
-
-use plugins::movement::MovementPlugin;
-use plugins::player::PlayerPlugin;
-
-use crate::plugins::camera::CameraPlugin;
+use game::plugins::camera::CameraPlugin;
+use game::plugins::movement::MovementPlugin;
+use game::plugins::player::PlayerPlugin;
+use game::plugins::ui::UiPlugin;
+use game::state::AppState;
 
 pub const WINDOW_WIDTH: i32 = 1366;
 pub const WINDOW_HEIGHT: i32 = 768;
@@ -14,6 +13,8 @@ pub const WINDOW_HEIGHT: i32 = 768;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .init_state::<AppState>()
+        .add_plugins(UiPlugin)
         .add_plugins(WireframePlugin::default())
         .add_plugins(PlayerPlugin)
         .add_plugins(MovementPlugin)
