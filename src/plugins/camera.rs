@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 use bevy::window::CursorGrabMode;
 
+use crate::common::AppState;
 use crate::plugins::movement::update_position;
 use crate::plugins::player::Player;
-use crate::state::AppState;
 
 const ORBIT_DISTANCE: f32 = 10.0;
 

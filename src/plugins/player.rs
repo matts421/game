@@ -1,13 +1,14 @@
 use bevy::{input::mouse::MouseMotion, prelude::*};
 
+use crate::common::AppState;
 use crate::plugins::movement::Velocity;
-//the character is a garbage can for now...
-use crate::state::AppState;
+use crate::plugins::world::VoxelResource;
+use crate::plugins::world::init_resources;
 
 const INIT_TRANSLATION: Vec3 = Vec3::new(0.0, 0.0, 0.0);
 const INIT_VELOCITY: Vec3 = Vec3::new(0.0, 0.0, 0.0);
 const PLAYER_SPEED: f32 = 0.5;
-pub const PLAYER_SCALE: f32 = 2.0;
+pub const PLAYER_SCALE: f32 = 0.5;
 
 #[derive(Component, Debug)]
 pub struct Player;
@@ -15,27 +16,18 @@ pub struct Player;
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_character).add_systems(
-            Update,
-            (mouse_look, player_movement).run_if(in_state(AppState::Playing)),
-        );
+        app.add_systems(Startup, spawn_character.after(init_resources))
+            .add_systems(
+                Update,
+                (mouse_look, player_movement).run_if(in_state(AppState::Playing)),
+            );
     }
 }
 
-fn spawn_character(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    let cube_mesh = meshes.add(Cuboid::new(1.0, 1.0, 1.0));
-    let cube_material = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.2, 0.7, 1.0),
-        ..default()
-    });
-
+fn spawn_character(mut commands: Commands, voxel: Res<VoxelResource>) {
     commands.spawn((
-        Mesh3d(cube_mesh),
-        MeshMaterial3d(cube_material),
+        Mesh3d(voxel.mesh.clone()),
+        MeshMaterial3d(voxel.materials[0].clone()),
         Transform {
             translation: INIT_TRANSLATION,
             rotation: Quat::IDENTITY,
