@@ -6,7 +6,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpStream, UdpSocket};
 
 pub async fn discover() -> std::io::Result<Option<String>> {
-    let socket = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, Ports::DISCOVERY as u16)).await?;
+    let socket = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, Ports::Discovery as u16)).await?;
     socket.join_multicast_v4(
         MULTICAST_IP.parse::<Ipv4Addr>().unwrap(),
         Ipv4Addr::UNSPECIFIED,

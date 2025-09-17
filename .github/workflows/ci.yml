@@ -57,13 +57,5 @@ jobs:
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
-      - name: Apply rustfmt and push changes
-        run: |
-          cargo fmt --all
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet; then
-            git add .
-            git commit -m "Apply rustfmt fixes"
-            git push
-          fi
+      - name: Run rustfmt
+        run: cargo fmt --all -- --check

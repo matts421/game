@@ -40,7 +40,6 @@ fn spawn_character(
             translation: INIT_TRANSLATION,
             rotation: Quat::IDENTITY,
             scale: Vec3::new(PLAYER_SCALE, PLAYER_SCALE, PLAYER_SCALE),
-            ..default()
         },
         Player,
         Velocity {
@@ -94,12 +93,11 @@ fn mouse_look(
 
     let delta = mouse_motion
         .read()
-        .into_iter()
         .fold(Vec2::ZERO, |curr, ev| curr + ev.delta);
 
     if delta != Vec2::ZERO {
         let sensitivity = 0.002;
         transform.rotation = Quat::from_rotation_y(-delta.x * sensitivity) * transform.rotation;
-        transform.rotation = transform.rotation * Quat::from_rotation_x(-delta.y * sensitivity);
+        transform.rotation *= Quat::from_rotation_x(-delta.y * sensitivity);
     }
 }
