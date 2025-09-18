@@ -33,18 +33,18 @@ impl InputFocus {
     }
 }
 
+type ButtonElements = (
+    Entity,
+    &'static Interaction,
+    &'static mut BackgroundColor,
+    &'static mut BorderColor,
+    &'static mut Button,
+);
+pub type ButtonInteraction = (With<Button>, Changed<Interaction>);
+
 fn button_system(
     mut input_focus: ResMut<InputFocus>,
-    mut interaction_query: Query<
-        (
-            Entity,
-            &Interaction,
-            &mut BackgroundColor,
-            &mut BorderColor,
-            &mut Button,
-        ),
-        Changed<Interaction>,
-    >,
+    mut interaction_query: Query<ButtonElements, Changed<Interaction>>,
 ) {
     for (entity, interaction, mut color, mut border_color, mut button) in &mut interaction_query {
         match *interaction {

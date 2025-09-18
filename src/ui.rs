@@ -1,5 +1,5 @@
 mod components;
 mod menu;
-mod ui;
+mod shared;
 
-pub use ui::*;
+pub use shared::*;

@@ -1,6 +1,7 @@
 use crate::{
     common::{AppState, MenuState},
     ui::components::button::*,
+    ui::shared::ButtonInteraction,
 };
 use bevy::prelude::*;
 
@@ -75,7 +76,7 @@ fn main_menu(
     mut exit: EventWriter<AppExit>,
     mut next_state: ResMut<NextState<AppState>>,
     mut next_menu_state: ResMut<NextState<MenuState>>,
-    mut query: Query<(&Interaction, &MenuButtonAction), (With<Button>, Changed<Interaction>)>,
+    mut query: Query<(&Interaction, &MenuButtonAction), ButtonInteraction>,
 ) {
     for (interaction, action) in &mut query {
         if *interaction != Interaction::Pressed {
@@ -143,10 +144,7 @@ impl Plugin for MultiplayerMenu {
 }
 fn multiplayer_menu(
     mut next_menu_state: ResMut<NextState<MenuState>>,
-    mut query: Query<
-        (&Interaction, &MultiplayerButtonAction),
-        (With<Button>, Changed<Interaction>),
-    >,
+    mut query: Query<(&Interaction, &MultiplayerButtonAction), ButtonInteraction>,
 ) {
     for (interaction, action) in &mut query {
         if *interaction != Interaction::Pressed {
