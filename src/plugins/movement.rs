@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::state::AppState;
+use crate::common::AppState;
 
 pub struct MovementPlugin;
 
