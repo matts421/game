@@ -85,21 +85,20 @@ fn button(label: &str) -> impl Bundle {
     )
 }
 
+type ButtonElements = (
+    Entity,
+    &'static Interaction,
+    &'static mut BackgroundColor,
+    &'static mut BorderColor,
+    &'static mut Button,
+    &'static Children,
+);
+
 fn button_system(
     mut exit: EventWriter<AppExit>,
     mut next_state: ResMut<NextState<AppState>>,
     mut input_focus: ResMut<InputFocus>,
-    mut interaction_query: Query<
-        (
-            Entity,
-            &Interaction,
-            &mut BackgroundColor,
-            &mut BorderColor,
-            &mut Button,
-            &Children,
-        ),
-        Changed<Interaction>,
-    >,
+    mut interaction_query: Query<ButtonElements, Changed<Interaction>>,
     mut text_query: Query<&mut Text>,
 ) {
     for (entity, interaction, mut color, mut border_color, mut button, children) in

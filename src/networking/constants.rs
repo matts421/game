@@ -1,7 +1,7 @@
 #[repr(i32)]
 pub enum Ports {
-    DISCOVERY = 34254,
-    GAME = 7878,
+    Discovery = 34254,
+    Game = 7878,
 }
 pub const BROADCAST_INTERVAL: u64 = 2;
 pub const BROADCAST_IDENTIFIER: &str = "GAME";

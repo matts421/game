@@ -16,14 +16,14 @@ pub async fn broadcast(state: Arc<Mutex<ConnectionState>>) -> std::io::Result<()
     let socket = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).await?;
     socket.set_broadcast(true)?;
 
-    let message = format!("{}:{}", BROADCAST_IDENTIFIER, Ports::GAME as i32);
+    let message = format!("{}:{}", BROADCAST_IDENTIFIER, Ports::Game as i32);
     let message_bytes = message.as_bytes();
 
     loop {
         let s = state.lock().await;
         if s.connections < s.max_connections {
             socket
-                .send_to(message_bytes, (MULTICAST_IP, Ports::DISCOVERY as u16))
+                .send_to(message_bytes, (MULTICAST_IP, Ports::Discovery as u16))
                 .await?;
         }
         sleep(Duration::from_secs(BROADCAST_INTERVAL)).await;
@@ -69,7 +69,7 @@ pub async fn echo_server() -> std::io::Result<()> {
         }
     });
 
-    let listener = TcpListener::bind((Ipv4Addr::UNSPECIFIED, Ports::GAME as u16)).await?;
+    let listener = TcpListener::bind((Ipv4Addr::UNSPECIFIED, Ports::Game as u16)).await?;
     println!("Server initialized. Waiting for connections...");
 
     loop {
