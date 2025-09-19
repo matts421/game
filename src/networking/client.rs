@@ -28,37 +28,53 @@ pub async fn discover() -> std::io::Result<Option<String>> {
     }
 }
 
-pub async fn echo_client() -> std::io::Result<()> {
+pub async fn client<H, Fut>(handler: H) -> io::Result<()>
+where
+    H: FnOnce(String) -> Fut,
+    Fut: Future<Output = io::Result<()>>,
+{
     match discover().await {
         Ok(Some(server)) => {
-            let mut stream = TcpStream::connect(server.clone()).await?;
-            println!("Connected to server, {}", server);
-
-            let stdin = io::stdin();
-            loop {
-                print!("You: ");
-                io::stdout().flush()?; // Flush to show prompt
-
-                let mut input = String::new();
-                stdin.read_line(&mut input)?;
-
-                if input.trim() == "exit" {
-                    break;
-                }
-
-                stream.write_all(input.as_bytes()).await?;
-
-                let mut buffer = [0; 512];
-                let n = stream.read(&mut buffer).await?;
-                println!("Echoed: {}", String::from_utf8_lossy(&buffer[..n]));
-            }
+            println!("Found server: {}", server);
+            handler(server).await
         }
         Ok(None) => {
             println!("No servers found.");
+            Ok(())
         }
         Err(e) => {
             eprintln!("Error: {}", e);
+            Err(e)
         }
     }
-    Ok(())
+}
+
+/**
+ * Echo client example
+ */
+pub async fn echo_client() -> std::io::Result<()> {
+    client(|server: String| async move {
+        let mut stream = TcpStream::connect(server).await?;
+
+        let stdin = io::stdin();
+        loop {
+            print!("You: ");
+            io::stdout().flush()?; // Flush to show prompt
+
+            let mut input = String::new();
+            stdin.read_line(&mut input)?;
+
+            if input.trim() == "exit" {
+                break;
+            }
+
+            stream.write_all(input.as_bytes()).await?;
+
+            let mut buffer = [0; 512];
+            let n = stream.read(&mut buffer).await?;
+            println!("Echoed: {}", String::from_utf8_lossy(&buffer[..n]));
+        }
+        Ok::<(), io::Error>(())
+    })
+    .await
 }

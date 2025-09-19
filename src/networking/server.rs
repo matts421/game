@@ -2,7 +2,7 @@ use crate::networking::constants::*;
 use std::net::Ipv4Addr;
 use std::sync::Arc;
 
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream, UdpSocket};
 use tokio::sync::Mutex;
 use tokio::time::{Duration, sleep};
@@ -30,33 +30,11 @@ pub async fn broadcast(state: Arc<Mutex<ConnectionState>>) -> std::io::Result<()
     }
 }
 
-pub async fn handle_client(mut socket: TcpStream, state: Arc<Mutex<ConnectionState>>) {
-    let mut buf = [0u8; 1024];
-
-    loop {
-        let n = match socket.read(&mut buf).await {
-            Ok(0) => break,
-            Ok(n) => n,
-            Err(e) => {
-                eprintln!("failed to read from socket; err = {:?}", e);
-                break;
-            }
-        };
-
-        if let Err(e) = socket.write_all(&buf[0..n]).await {
-            eprintln!("failed to write to socket; err = {:?}", e);
-            break;
-        }
-    }
-
-    {
-        let mut s = state.lock().await;
-        s.connections -= 1;
-        println!("Connections: {}", s.connections);
-    }
-}
-
-pub async fn echo_server() -> std::io::Result<()> {
+pub async fn server<H, Fut>(handler: H) -> io::Result<()>
+where
+    H: Fn(tokio::net::TcpStream, Arc<Mutex<ConnectionState>>) -> Fut + Send + Sync + 'static,
+    Fut: std::future::Future<Output = ()> + Send + 'static,
+{
     let state = Arc::new(Mutex::new(ConnectionState {
         connections: 0,
         max_connections: 2,
@@ -82,6 +60,39 @@ pub async fn echo_server() -> std::io::Result<()> {
             }
         }
         let client_state = Arc::clone(&state);
-        tokio::spawn(handle_client(socket, client_state));
+        tokio::spawn(handler(socket, client_state));
+    }
+}
+
+/**
+ * Echo server example
+ */
+pub async fn echo_server() -> std::io::Result<()> {
+    server(echo_handler).await
+}
+
+async fn echo_handler(mut socket: TcpStream, state: Arc<Mutex<ConnectionState>>) {
+    let mut buf = [0u8; 1024];
+
+    loop {
+        let n = match socket.read(&mut buf).await {
+            Ok(0) => break,
+            Ok(n) => n,
+            Err(e) => {
+                eprintln!("failed to read from socket; err = {:?}", e);
+                break;
+            }
+        };
+
+        if let Err(e) = socket.write_all(&buf[0..n]).await {
+            eprintln!("failed to write to socket; err = {:?}", e);
+            break;
+        }
+    }
+
+    {
+        let mut s = state.lock().await;
+        s.connections -= 1;
+        println!("Connections: {}", s.connections);
     }
 }
