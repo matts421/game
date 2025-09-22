@@ -3,6 +3,7 @@ use game::common::AppState;
 use game::plugins::*;
 use game::ui::UiPlugin;
 
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -15,3 +16,5 @@ fn main() {
         .run();
     println!("Program finished running.");
 }
+
+

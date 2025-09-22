@@ -2,6 +2,7 @@ use crate::common::{AppState, MenuState};
 use crate::ui::components::button::*;
 use crate::ui::menu::*;
 use bevy::prelude::*;
+use bevy_fps_counter::{FpsCounter, FpsCounterPlugin};
 
 pub struct UiPlugin;
 impl Plugin for UiPlugin {
@@ -11,6 +12,8 @@ impl Plugin for UiPlugin {
             .add_systems(OnEnter(AppState::Menu), enter_menu)
             .add_systems(OnExit(AppState::Menu), leave_menu)
             .add_systems(Update, button_system.run_if(in_state(AppState::Menu)))
+            .add_systems(Update, key_handler)
+            .add_plugins(FpsCounterPlugin)
             .add_plugins(MainMenu)
             .add_plugins(MultiplayerMenu);
     }
@@ -65,6 +68,20 @@ fn button_system(
                 *color = NORMAL_BUTTON.into();
                 *border_color = BorderColor(Color::WHITE);
             }
+        }
+    }
+}
+
+
+fn key_handler(
+    key_input: Res<ButtonInput<KeyCode>>,
+    mut diags_state: ResMut<FpsCounter>,
+) {
+    if key_input.just_pressed(KeyCode::AltLeft) {
+        if diags_state.is_enabled() {
+            diags_state.disable();
+        } else {
+            diags_state.enable();
         }
     }
 }
