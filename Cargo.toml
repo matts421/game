@@ -7,6 +7,7 @@ default-run = "game"
 [dependencies]
 
 bevy = { version = "0.16.1", features = ["dynamic_linking"] }
+bevy-fps-counter = { path = "./bevy-fps-counter" }
 regex = "1.11.2"
 tokio = { version = "1.47.1", features = ["full"] }
 
