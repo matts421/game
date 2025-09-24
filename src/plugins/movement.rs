@@ -15,10 +15,8 @@ impl Plugin for MovementPlugin {
     }
 }
 
-pub fn update_position(mut query: Query<(&Velocity, &mut Transform)>) {
+pub fn update_position(mut query: Query<(&Velocity, &mut Transform)>, time: Res<Time>) {
     for (velocity, mut transform) in query.iter_mut() {
-        transform.translation.x += velocity.value.x;
-        transform.translation.y += velocity.value.y;
-        transform.translation.z += velocity.value.z;
+        transform.translation += time.delta_secs() * velocity.value;
     }
 }

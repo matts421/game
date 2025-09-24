@@ -7,7 +7,7 @@ use crate::plugins::world::VoxelResource;
 use crate::plugins::world::init_resources;
 
 const INIT_VELOCITY: Vec3 = Vec3::ZERO;
-const PLAYER_SPEED: f32 = 0.5;
+const PLAYER_SPEED: f32 = 15.0;
 const PLAYER_SCALE: f32 = 0.5;
 
 type Movement = (
