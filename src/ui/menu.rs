@@ -1,5 +1,5 @@
 use crate::{
-    common::{AppState, MenuState},
+    common::{GameState, MenuState},
     ui::components::button::*,
     ui::shared::ButtonInteraction,
 };
@@ -74,7 +74,7 @@ impl Plugin for MainMenu {
 }
 fn main_menu(
     mut exit: EventWriter<AppExit>,
-    mut next_state: ResMut<NextState<AppState>>,
+    mut next_state: ResMut<NextState<GameState>>,
     mut next_menu_state: ResMut<NextState<MenuState>>,
     mut query: Query<(&Interaction, &MenuButtonAction), ButtonInteraction>,
 ) {
@@ -84,7 +84,7 @@ fn main_menu(
         }
 
         match action {
-            MenuButtonAction::Play => next_state.set(AppState::Playing),
+            MenuButtonAction::Play => next_state.set(GameState::Playing),
             MenuButtonAction::Multiplayer => next_menu_state.set(MenuState::Multiplayer),
             MenuButtonAction::Quit => {
                 exit.write(AppExit::Success);

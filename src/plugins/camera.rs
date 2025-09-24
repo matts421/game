@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy::window::CursorGrabMode;
 
-use crate::common::AppState;
+use crate::common::GameState;
 use crate::plugins::movement::update_position;
 use crate::plugins::player::Player;
 
@@ -12,13 +12,13 @@ pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup)
-            .add_systems(OnEnter(AppState::Playing), lock_cursor)
-            .add_systems(OnExit(AppState::Playing), unlock_cursor)
+            .add_systems(OnEnter(GameState::Playing), lock_cursor)
+            .add_systems(OnExit(GameState::Playing), unlock_cursor)
             .add_systems(
                 Update,
                 orbit
                     .after(update_position)
-                    .run_if(in_state(AppState::Playing)),
+                    .run_if(in_state(GameState::Playing)),
             );
     }
 }
