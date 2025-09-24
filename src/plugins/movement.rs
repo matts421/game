@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::common::AppState;
+use crate::common::GameState;
 
 pub struct MovementPlugin;
 
@@ -11,7 +11,7 @@ pub struct Velocity {
 
 impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, update_position.run_if(in_state(AppState::Playing)));
+        app.add_systems(Update, update_position.run_if(in_state(GameState::Playing)));
     }
 }
 

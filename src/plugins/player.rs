@@ -31,7 +31,7 @@ impl Plugin for PlayerPlugin {
         app.add_systems(Startup, spawn_player.after(init_resources))
             .add_systems(
                 Update,
-                (player_look, player_move).run_if(in_state(AppState::Playing)),
+                (player_look, player_move).run_if(in_state(GameState::Playing)),
             );
     }
 }
@@ -52,14 +52,14 @@ fn spawn_player(mut commands: Commands, voxel: Res<VoxelResource>) {
         Velocity {
             value: INIT_VELOCITY,
         },
-        default_input_map(),
+        default_game_action_map(),
     ));
 }
 
-fn player_look(single: Single<(Movement, &ActionState<Action>), With<Player>>) {
+fn player_look(single: Single<(Movement, &ActionState<GameAction>), With<Player>>) {
     let ((mut transform, _, mut angles), action_state) = single.into_inner();
 
-    let mouse_delta = action_state.axis_pair(&Action::Look);
+    let mouse_delta = action_state.axis_pair(&GameAction::Look);
     angles.yaw -= mouse_delta.x * MOUSE_SENSITIVITY;
     angles.pitch = (angles.pitch - mouse_delta.y * MOUSE_SENSITIVITY)
         .clamp(-std::f32::consts::FRAC_PI_2, std::f32::consts::FRAC_PI_2);
@@ -67,18 +67,18 @@ fn player_look(single: Single<(Movement, &ActionState<Action>), With<Player>>) {
     transform.rotation = Quat::from_rotation_y(angles.yaw) * Quat::from_rotation_x(angles.pitch);
 }
 
-fn player_move(single: Single<(Movement, &ActionState<Action>), With<Player>>) {
+fn player_move(single: Single<(Movement, &ActionState<GameAction>), With<Player>>) {
     let ((_, mut velocity, angles), action_state) = single.into_inner();
     let mut direction = Vec3::ZERO;
     let yaw_rot = Quat::from_rotation_y(angles.yaw);
 
     // Horizontal direction handling
-    let hori = action_state.clamped_axis_pair(&Action::MoveHorizontal);
+    let hori = action_state.clamped_axis_pair(&GameAction::MoveHorizontal);
     direction += hori.x * (yaw_rot * Vec3::X).normalize();
     direction += hori.y * -(yaw_rot * Vec3::Z).normalize();
 
     // Vertical direction handling
-    let vert = action_state.clamped_value(&Action::MoveVertical);
+    let vert = action_state.clamped_value(&GameAction::MoveVertical);
     direction += vert * Vec3::Y;
 
     velocity.value = direction.normalize_or_zero() * PLAYER_SPEED;

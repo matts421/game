@@ -1,20 +1,36 @@
-use crate::common::{AppState, MenuState};
+use crate::common::{GameState, MenuAction, MenuState};
 use crate::ui::components::button::*;
 use crate::ui::menu::*;
 use bevy::prelude::*;
+use leafwing_input_manager::prelude::ActionState;
 
 pub struct UiPlugin;
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<MenuState>()
             .init_resource::<InputFocus>()
-            .add_systems(OnEnter(AppState::Menu), enter_menu)
-            .add_systems(OnExit(AppState::Menu), leave_menu)
-            .add_systems(Update, button_system.run_if(in_state(AppState::Menu)))
+            .add_systems(OnEnter(GameState::Menu), enter_menu)
+            .add_systems(OnExit(GameState::Menu), leave_menu)
+            .add_systems(Update, toggle_menu)
+            .add_systems(Update, button_system.run_if(in_state(GameState::Menu)))
             .add_plugins(MainMenu)
             .add_plugins(MultiplayerMenu);
     }
 }
+
+fn toggle_menu(
+    action_state: Res<ActionState<MenuAction>>,
+    game_state: Res<State<GameState>>,
+    mut next_game_state: ResMut<NextState<GameState>>,
+) {
+    if action_state.just_pressed(&MenuAction::ToggleMenu) {
+        match game_state.get() {
+            GameState::Playing => next_game_state.set(GameState::Menu),
+            GameState::Menu => next_game_state.set(GameState::Playing),
+        }
+    }
+}
+
 fn enter_menu(mut next_menu_state: ResMut<NextState<MenuState>>) {
     next_menu_state.set(MenuState::Main)
 }
