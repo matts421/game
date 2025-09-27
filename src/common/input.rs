@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
+use serde::{Deserialize, Serialize};
 
 pub const MOUSE_SENSITIVITY: f32 = 0.002;
 
@@ -13,7 +14,7 @@ impl Plugin for InputPlugin {
     }
 }
 
-#[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug, Reflect)]
+#[derive(Serialize, Deserialize, Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug, Reflect)]
 #[actionlike(DualAxis)]
 pub enum GameAction {
     MoveHorizontal,

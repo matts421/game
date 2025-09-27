@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::common::*;
 use crate::plugins::movement::Velocity;
@@ -16,11 +17,14 @@ type Movement = (
     &'static mut Angles2D,
 );
 
+#[derive(Serialize, Deserialize, Component, Clone, Debug, PartialEq, Deref, DerefMut)]
+pub struct PlayerTransform(pub Transform);
+
 #[derive(Component)]
 pub struct Player;
 
 #[derive(Component)]
-struct Angles2D {
+pub struct Angles2D {
     yaw: f32,
     pitch: f32,
 }

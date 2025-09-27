@@ -1,10 +1,11 @@
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::common::GameState;
 
 pub struct MovementPlugin;
 
-#[derive(Component, Debug)]
+#[derive(Component, Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Velocity {
     pub value: Vec3,
 }
