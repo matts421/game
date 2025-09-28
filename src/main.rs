@@ -7,8 +7,8 @@ use game::world::WorldPlugin;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(InputPlugin)
         .init_state::<GameState>()
+        .add_plugins(InputPlugin)
         .add_plugins(WorldPlugin)
         .add_plugins(UiPlugin)
         .add_plugins(PlayerPlugin)
