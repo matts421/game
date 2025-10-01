@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use bevy::window::CursorGrabMode;
+use bevy::transform::TransformSystem;
 
 use crate::common::GameState;
-use crate::plugins::movement::update_position;
 use crate::plugins::player::Player;
 
 const ORBIT_DISTANCE: f32 = 10.0;
@@ -15,9 +15,9 @@ impl Plugin for CameraPlugin {
             .add_systems(OnEnter(GameState::Playing), lock_cursor)
             .add_systems(OnExit(GameState::Playing), unlock_cursor)
             .add_systems(
-                Update,
-                orbit
-                    .after(update_position)
+                PostUpdate,
+                orbit   
+                    .before(TransformSystem::TransformPropagate)
                     .run_if(in_state(GameState::Playing)),
             );
     }

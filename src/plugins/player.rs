@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
+use avian3d::prelude::*;
 
 use crate::common::*;
-use crate::plugins::movement::Velocity;
 use crate::plugins::world::VoxelResource;
 use crate::plugins::world::init_resources;
 
@@ -12,7 +12,7 @@ const PLAYER_SCALE: f32 = 0.5;
 
 type Movement = (
     &'static mut Transform,
-    &'static mut Velocity,
+    &'static mut LinearVelocity,
     &'static mut Angles2D,
 );
 
@@ -30,30 +30,36 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_player.after(init_resources))
             .add_systems(
-                Update,
+                FixedUpdate,
                 (player_look, player_move).run_if(in_state(GameState::Playing)),
             );
     }
 }
 
-fn spawn_player(mut commands: Commands, voxel: Res<VoxelResource>) {
-    commands.spawn((
+fn spawn_player(mut commands: Commands, voxel: Res<VoxelResource>, meshes: Res<Assets<Mesh>>) {
+    if let Some(mesh) = meshes.get(&voxel.mesh){ 
+         commands.spawn((
         Mesh3d(voxel.mesh.clone()),
         MeshMaterial3d(voxel.materials[0].clone()),
         Transform {
-            scale: Vec3::new(PLAYER_SCALE, PLAYER_SCALE, PLAYER_SCALE),
-            ..default()
+    translation: Vec3::new(0.0, 5.0, 0.0),
+    scale: Vec3::splat(PLAYER_SCALE),
+    ..Default::default()
         },
         Angles2D {
             yaw: 0.0,
             pitch: 0.0,
         },
         Player,
-        Velocity {
-            value: INIT_VELOCITY,
-        },
+        LinearVelocity (INIT_VELOCITY),
+        RigidBody::Dynamic,
+        Collider::convex_hull_from_mesh(mesh).unwrap(), 
         default_game_action_map(),
+        LockedAxes::new()
+        .lock_rotation_x()
+        .lock_rotation_z(),
     ));
+    }
 }
 
 fn player_look(single: Single<(Movement, &ActionState<GameAction>), With<Player>>) {
@@ -68,7 +74,7 @@ fn player_look(single: Single<(Movement, &ActionState<GameAction>), With<Player>
 }
 
 fn player_move(single: Single<(Movement, &ActionState<GameAction>), With<Player>>) {
-    let ((_, mut velocity, angles), action_state) = single.into_inner();
+    let ((_, mut linear_velocity, angles), action_state) = single.into_inner();
     let mut direction = Vec3::ZERO;
     let yaw_rot = Quat::from_rotation_y(angles.yaw);
 
@@ -81,5 +87,6 @@ fn player_move(single: Single<(Movement, &ActionState<GameAction>), With<Player>
     let vert = action_state.clamped_value(&GameAction::MoveVertical);
     direction += vert * Vec3::Y;
 
-    velocity.value = direction.normalize_or_zero() * PLAYER_SPEED;
+    **linear_velocity = direction.normalize_or_zero() * PLAYER_SPEED;
 }
+

@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use avian3d::prelude::*; 
 
 pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
@@ -33,19 +34,23 @@ pub fn init_resources(
     });
 }
 
-fn setup(mut commands: Commands, voxel: Res<VoxelResource>) {
+fn setup(mut commands: Commands, voxel: Res<VoxelResource>, meshes: Res<Assets<Mesh>>) {
     let mut count = 0;
     let width = 100;
     let length = 100;
 
-    for x in 0..=width {
+    if let Some(mesh) = meshes.get(&voxel.mesh) { 
+        for x in 0..=width {
         for z in 0..=length {
             commands.spawn((
                 Mesh3d(voxel.mesh.clone()),
                 MeshMaterial3d(voxel.materials[count % voxel.materials.len()].clone()),
                 Transform::from_xyz(x as f32, 0.0, z as f32),
+                RigidBody::Static, 
+                Collider::convex_hull_from_mesh(mesh).unwrap(),
             ));
             count += 1;
         }
+    }
     }
 }
